@@ -175,13 +175,21 @@ gfortran $link_flags \
     $mpi_link_flags
 
 experiment_directory=""
-for candidate in "$configuration_path/EXP00" "$configuration_path/EXPREF" "$nemo_source/cfgs/$reference_configuration/EXPREF"; do
+for candidate in "$nemo_source/cfgs/$reference_configuration/EXPREF" "$configuration_path/EXP00" "$configuration_path/EXPREF"; do
     [ -d "$candidate" ] && { experiment_directory="$candidate"; break; }
 done
 [ -n "$experiment_directory" ] || { echo "No experiment directory found near $configuration_path" >&2; exit 1; }
 
+echo "Copying experiment files from $experiment_directory to $run_directory"
 cp -r "$experiment_directory"/. "$run_directory/"
 ln -sf "$output_directory/${shared_library_name}" "$run_directory/${shared_library_name}"
+
+for required in namelist_cfg namelist_ref; do
+    [ -f "$run_directory/$required" ] || { echo "ERROR: $required missing from $run_directory after copy" >&2; ls -la "$run_directory" >&2; exit 1; }
+done
+
+echo "Run directory contents:"
+ls -la "$run_directory"
 
 echo "Built  $output_directory/${shared_library_name}"
 echo "Run    $run_directory"

@@ -49,6 +49,14 @@ jobs:
           NEMO_BUILD_EXAMPLES: 'true'
         run: julia --project=docs --color=yes docs/make.jl
 
+      - name: Capture run-directory listing on failure
+        if: failure()
+        run: |
+          echo "=== run/ contents ==="
+          ls -la /home/runner/nemo_orca2_ice/run/ || true
+          echo "=== build/ contents ==="
+          ls -la /home/runner/nemo_orca2_ice/build/ || true
+
       - name: Upload NEMO logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -56,10 +64,6 @@ jobs:
           name: nemo-logs
           path: |
             /home/runner/nemo_orca2_ice/build.log
-            /home/runner/nemo_orca2_ice/run/ocean.output
-            /home/runner/nemo_orca2_ice/run/ocean.output_*
-            /home/runner/nemo_orca2_ice/run/nemo_stdout.log
-            /home/runner/nemo_orca2_ice/run/layout.dat
-            /home/runner/nemo_orca2_ice/run/communication_report.txt
+            /home/runner/nemo_orca2_ice/run/
           if-no-files-found: warn
           retention-days: 7
