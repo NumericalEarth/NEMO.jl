@@ -113,22 +113,25 @@ figure_initial
 
 # ### Stepping with snapshots
 #
-# We integrate for `FINAL_ITERATION` time steps and store the sea-surface height anomaly at every step so we
-# can animate it afterwards.
+# We integrate for `FINAL_ITERATION` time steps and sample the sea-surface height anomaly every
+# `SNAPSHOT_STRIDE` steps so the animation stays manageable while the simulation can be long.
 
-sea_surface_η_snapshots  = Vector{Matrix{Float64}}(undef, FINAL_ITERATION)
+const SNAPSHOT_STRIDE = 10
+
+sea_surface_η_snapshots  = Matrix{Float64}[]
+iteration_history        = Int[]
 mean_temperature_history = Float64[]
 
 for iteration in 1:FINAL_ITERATION
     step!(library)
-    if mod(iteration, 10) == 0
+    if mod(iteration, SNAPSHOT_STRIDE) == 0
         get_temperature!(library, temperature)
         get_sea_surface_height!(library, sea_surface_η)
 
-        snapshot                          = copy(sea_surface_η)
-        snapshot[land_mask]              .= NaN
-        sea_surface_η_snapshots[iteration] = snapshot
-
+        snapshot              = copy(sea_surface_η)
+        snapshot[land_mask]  .= NaN
+        push!(sea_surface_η_snapshots,  snapshot)
+        push!(iteration_history,        iteration)
         push!(mean_temperature_history, sum(temperature) / length(temperature))
 
         @info("step",
@@ -146,7 +149,6 @@ end
 
 η_minimum = minimum(s -> minimum(filter(!isnan, s)), sea_surface_η_snapshots)
 η_maximum = maximum(s -> maximum(filter(!isnan, s)), sea_surface_η_snapshots)
-η_range   = max(abs(η_minimum), abs(η_maximum))
 
 snapshot_observable = Observable(sea_surface_η_snapshots[1])
 
@@ -155,13 +157,13 @@ axis_animation   = Axis(figure_animation[1, 1]; title  = "Sea-surface height (m)
                                                 xlabel = "zonal cell index",
                                                 ylabel = "meridional cell index")
 heatmap_animation = heatmap!(axis_animation, snapshot_observable;
-                             colormap = :balance, colorrange = (-η_range, η_range), nan_color = :gray85)
+                             colormap = :balance, colorrange = (-1.5, 1.5), nan_color = :gray85)
 Colorbar(figure_animation[1, 2], heatmap_animation; label = "m")
 
 animation_filename = "orca2_ice_ssh.mp4"
-record(figure_animation, animation_filename, 1:FINAL_ITERATION; framerate = 8) do iteration
-    snapshot_observable[] = sea_surface_η_snapshots[iteration]
-    axis_animation.title  = "Sea-surface height (m) — step $iteration"
+record(figure_animation, animation_filename, eachindex(sea_surface_η_snapshots); framerate = 8) do frame
+    snapshot_observable[] = sea_surface_η_snapshots[frame]
+    axis_animation.title  = "Sea-surface height (m) — step $(iteration_history[frame])"
 end
 nothing #hide
 
@@ -180,7 +182,7 @@ figure_diagnostic = Figure(size = (640, 300))
 axis_diagnostic   = Axis(figure_diagnostic[1, 1]; xlabel = "iteration",
                                                   ylabel = "global mean temperature (°C)",
                                                   title  = "Global-mean temperature drift")
-lines!(axis_diagnostic, 1:FINAL_ITERATION, mean_temperature_history; color = :firebrick, linewidth = 2)
+lines!(axis_diagnostic, iteration_history, mean_temperature_history; color = :firebrick, linewidth = 2)
 figure_diagnostic
 
 # ### Shutdown
