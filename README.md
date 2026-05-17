@@ -1,5 +1,10 @@
 # NEMO.jl
 
+[![Docs (stable)](https://img.shields.io/badge/docs-stable-blue.svg)](https://simone-silvestri.github.io/NEMO.jl/stable)
+[![Docs (dev)](https://img.shields.io/badge/docs-dev-blue.svg)](https://simone-silvestri.github.io/NEMO.jl/dev)
+[![CI](https://github.com/simone-silvestri/NEMO.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/simone-silvestri/NEMO.jl/actions/workflows/ci.yml)
+[![Documentation](https://github.com/simone-silvestri/NEMO.jl/actions/workflows/docs.yml/badge.svg)](https://github.com/simone-silvestri/NEMO.jl/actions/workflows/docs.yml)
+
 Julia interface to the [NEMO](https://www.nemo-ocean.eu) ocean model. Build NEMO
 as a shared library, drive it from Julia with `initialize!` / `step!` /
 `finalize!`, and read or write prognostic state and surface forcing at every
