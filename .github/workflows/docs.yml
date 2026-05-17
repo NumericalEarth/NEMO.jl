@@ -1,0 +1,55 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags: ['*']
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'examples/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'Project.toml'
+      - '.github/workflows/docs.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      pull-requests: read
+      statuses: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Fortran and NetCDF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran gcc make git \
+                                  libnetcdf-dev libnetcdff-dev \
+                                  netcdf-bin
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+
+      - uses: julia-actions/cache@v2
+
+      - name: Instantiate docs project
+        run: julia --project=docs --color=yes -e 'using Pkg; Pkg.instantiate()'
+
+      - name: Build documentation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JULIA_DEBUG: Documenter
+          NEMO_BUILD_EXAMPLES: 'true'
+        run: julia --project=docs --color=yes docs/make.jl

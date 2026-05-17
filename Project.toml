@@ -1,0 +1,33 @@
+name = "NEMO"
+uuid = "4b396d75-d59e-4f00-a28a-9025e487bc6f"
+authors = ["Simone Silvestri <silvestri.simone0@gmail.com>"]
+version = "0.1.0-DEV"
+
+[deps]
+Dates    = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Libdl    = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+Printf   = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Scratch  = "6c6a2e73-6563-6170-7368-637461726353"
+UUIDs    = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+
+[weakdeps]
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed3d1bb71"
+MeshArrays = "cb8c808f-1acf-59a3-9d2b-6e38d009f683"
+
+[extensions]
+NemoNCDatasetsExt = ["NCDatasets"]
+NemoMeshArraysExt = ["MeshArrays"]
+
+[compat]
+julia              = "1.10"
+OrderedCollections = "1"
+Scratch            = "1"
+NCDatasets         = "0.13, 0.14"
+MeshArrays         = "0.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
