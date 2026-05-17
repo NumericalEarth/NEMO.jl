@@ -181,7 +181,9 @@ done
 [ -n "$experiment_directory" ] || { echo "No experiment directory found near $configuration_path" >&2; exit 1; }
 
 echo "Copying experiment files from $experiment_directory to $run_directory"
-cp -r "$experiment_directory"/. "$run_directory/"
+# -L dereferences symlinks because EXPREF references ../../SHARED/namelist_ref via symlink;
+# on GNU cp those symlinks are preserved and resolve to nonexistent paths in the run directory.
+cp -RL "$experiment_directory"/. "$run_directory/"
 ln -sf "$output_directory/${shared_library_name}" "$run_directory/${shared_library_name}"
 
 for required in namelist_cfg namelist_ref; do
