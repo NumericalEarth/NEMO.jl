@@ -5,6 +5,7 @@ deps/deps.jl
 docs/build/
 docs/src/literated/
 docs/site/
+Manifest.toml
 LocalPreferences.toml
 
 # editor / OS
