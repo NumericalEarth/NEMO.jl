@@ -17,7 +17,7 @@ using CairoMakie
 # side-by-side.
 
 const SCRATCH_OUTPUT  = get(ENV, "NEMO_OUTPUT", joinpath(homedir(), "nemo_orca2_ice"))
-const FINAL_ITERATION = 1500
+const FINAL_ITERATION = 200
 
 # ### Source, build, and forcing data
 #
