@@ -1,5 +1,8 @@
 *.png
 *.mp4
+*.log
+*.output
+*.zip
 
 *.jl.*.cov
 *.jl.cov

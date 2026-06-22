@@ -78,24 +78,34 @@ source tree it was built from, the resulting library and run directory, the
 namelists that drive it, and a UUID so multiple configurations coexist on disk.
 """
 Base.@kwdef struct NemoConfiguration
-    name             :: String                       = ""
-    source           :: String                       = ""
-    output_directory :: String                       = ""
-    library_path     :: String                       = ""
-    run_directory    :: String                       = ""
-    mpi              :: Bool                         = false
-    namelists        :: Dict{String, NemoNamelist}   = Dict{String, NemoNamelist}()
-    identifier       :: UUID                         = uuid4()
+    name                    :: String                       = ""
+    source                  :: String                       = ""
+    output_directory        :: String                       = ""
+    library_path            :: String                       = ""
+    run_directory           :: String                       = ""
+    reference_configuration :: String                       = "ORCA2_ICE_PISCES"
+    academic                :: Bool                          = false
+    namelist_files          :: Vector{String}               = ["namelist_cfg"]
+    my_src                  :: Vector{String}               = String[]
+    external_forcing        :: Bool                          = false
+    mpi                     :: Bool                          = false
+    namelists               :: Dict{String, NemoNamelist}   = Dict{String, NemoNamelist}()
+    identifier              :: UUID                          = uuid4()
 end
 
 function Base.show(io::IO, configuration::NemoConfiguration)
     println(io, "NemoConfiguration:")
-    println(io, "  name             = ", configuration.name)
-    println(io, "  mpi              = ", configuration.mpi)
-    println(io, "  source           = ", configuration.source)
-    println(io, "  output_directory = ", configuration.output_directory)
-    println(io, "  library_path     = ", configuration.library_path)
-    println(io, "  run_directory    = ", configuration.run_directory)
-    println(io, "  namelists        = ", collect(keys(configuration.namelists)))
-      print(io, "  identifier       = ", configuration.identifier)
+    println(io, "  name                    = ", configuration.name)
+    println(io, "  reference_configuration = ", configuration.reference_configuration)
+    println(io, "  academic                = ", configuration.academic)
+    println(io, "  mpi                     = ", configuration.mpi)
+    println(io, "  source                  = ", configuration.source)
+    println(io, "  output_directory        = ", configuration.output_directory)
+    println(io, "  library_path            = ", configuration.library_path)
+    println(io, "  run_directory           = ", configuration.run_directory)
+    println(io, "  namelist_files          = ", configuration.namelist_files)
+    println(io, "  my_src                  = ", configuration.my_src)
+    println(io, "  external_forcing        = ", configuration.external_forcing)
+    println(io, "  namelists               = ", collect(keys(configuration.namelists)))
+      print(io, "  identifier              = ", configuration.identifier)
 end

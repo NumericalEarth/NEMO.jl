@@ -16,7 +16,10 @@ const OUTPUT_DIR   = joinpath(@__DIR__, "src", "literated")
 mkpath(OUTPUT_DIR)
 
 examples = [
-    Example("ORCA2_ICE smoke test", "ORCA2_ICE_step"),
+    Example("ORCA2_ICE smoke test", "orca2_ice"),
+    Example("Regional Atlantic Simulation", "amm12_regional_simulation").
+    Example("Channel Simulation", "channel_step"),
+    Example("Julia forced Channel Simulation", "forcing_from_julia")
 ]
 
 # Skip the heavy literate build (clone NEMO + build + 700MB download + step) unless
@@ -36,7 +39,7 @@ end
 
 format = Documenter.HTML(collapselevel = 2,
                          size_threshold = nothing,
-                         canonical = "https://simone-silvestri.github.io/NEMO.jl/stable/")
+                         canonical = "https://numericalearth.github.io/NEMO.jl/stable/")
 
 examples_pages = build_examples ?
     [ex.title => joinpath("literated", ex.basename * ".md") for ex in examples] :

@@ -20,7 +20,7 @@ NEMO.jl is not yet registered. Install from the GitHub source:
 ```julia
 julia> using Pkg
 
-julia> Pkg.add(url = "https://github.com/simone-silvestri/NEMO.jl")
+julia> Pkg.add(url = "https://github.com/NumericalEarth/NEMO.jl")
 ```
 
 Building the shared library requires:

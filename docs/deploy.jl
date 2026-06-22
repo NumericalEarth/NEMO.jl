@@ -1,6 +1,6 @@
 using Documenter
 
-deploydocs(repo       = "github.com/simone-silvestri/NEMO.jl.git",
+deploydocs(repo       = "github.com/NumericalEarth/NEMO.jl.git",
            devbranch  = "main",
            target     = "build",
            branch     = "gh-pages",

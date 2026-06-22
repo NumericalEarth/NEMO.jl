@@ -6,15 +6,12 @@ end
 function with_output_control(work, lib::NemoLibrary)
     lib.verbose && return work()
     log_path     = joinpath(lib.run_directory, "nemo_stdout.log")
+    log_file     = open(log_path, "w")
+    log_fd       = fd(log_file)
     saved_stdout = ccall(:dup, Cint, (Cint,), 1)
     saved_stderr = ccall(:dup, Cint, (Cint,), 2)
-    log_descriptor = ccall(:open, Cint, (Cstring, Cint, Cint),
-                           log_path,
-                           Cint(0x202),     # O_WRONLY | O_CREAT  (macOS / Linux)
-                           Cint(0o644))
-    ccall(:dup2,  Cint, (Cint, Cint), log_descriptor, 1)
-    ccall(:dup2,  Cint, (Cint, Cint), log_descriptor, 2)
-    ccall(:close, Cint, (Cint,), log_descriptor)
+    ccall(:dup2, Cint, (Cint, Cint), log_fd, 1)
+    ccall(:dup2, Cint, (Cint, Cint), log_fd, 2)
     try
         return work()
     finally
@@ -22,6 +19,7 @@ function with_output_control(work, lib::NemoLibrary)
         ccall(:dup2,  Cint, (Cint, Cint), saved_stderr, 2)
         ccall(:close, Cint, (Cint,), saved_stdout)
         ccall(:close, Cint, (Cint,), saved_stderr)
+        close(log_file)
     end
 end
 

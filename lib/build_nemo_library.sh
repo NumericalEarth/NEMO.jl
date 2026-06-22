@@ -1,29 +1,43 @@
 #!/usr/bin/env bash
 #
-# build_nemo_library.sh NEMO_SOURCE OUTPUT_DIR CONFIG_NAME [--mpi]
+# build_nemo_library.sh NEMO_SOURCE OUTPUT_DIR CONFIG_NAME [--reference NAME] [--academic] [--my-src PATH]... [--mpi]
 #
 # Builds NEMO 4.2.x as a shared library callable from Julia.
 #
-#   NEMO_SOURCE    path to a NEMO 4.2.x source tree (must contain makenemo, cfgs/, arch/, src/)
-#   OUTPUT_DIR     destination for libnemo.{dylib,so} and run/
-#   CONFIG_NAME    name for the new configuration (created under NEMO_SOURCE/cfgs/)
-#   --mpi          enable MPI (resolves MPI_HOME from mpifort on PATH if unset)
+#   NEMO_SOURCE       path to a NEMO 4.2.x source tree (must contain makenemo, cfgs/, tests/, arch/, src/)
+#   OUTPUT_DIR        destination for libnemo.{dylib,so} and run/
+#   CONFIG_NAME       name for the new configuration (created under NEMO_SOURCE/{cfgs,tests}/)
+#   --reference NAME  configuration to derive from (default ORCA2_ICE_PISCES); a cfgs/ reference
+#                     configuration, or a tests/ case when --academic is given
+#   --academic        derive from a tests/ academic case (makenemo -a) instead of a cfgs/ reference (-r)
+#   --my-src PATH     user Fortran file or directory copied into the configuration's MY_SRC (overrides base
+#                     sources); may be given multiple times
+#   --mpi             enable MPI (resolves MPI_HOME from mpifort on PATH if unset)
 
 set -euo pipefail
 
 script_directory="$(cd "$(dirname "$0")" && pwd)"
 
 use_mpi=0
+academic=0
+reference_configuration="ORCA2_ICE_PISCES"
 positional=()
-for argument in "$@"; do
-    case "$argument" in
-        --mpi) use_mpi=1 ;;
-        *)     positional+=("$argument") ;;
+my_src_paths=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --mpi)         use_mpi=1 ;;
+        --academic)    academic=1 ;;
+        --reference)   shift; reference_configuration="$1" ;;
+        --reference=*) reference_configuration="${1#*=}" ;;
+        --my-src)      shift; my_src_paths+=("$1") ;;
+        --my-src=*)    my_src_paths+=("${1#*=}") ;;
+        *)             positional+=("$1") ;;
     esac
+    shift
 done
 
 if [ ${#positional[@]} -lt 3 ]; then
-    echo "Usage: $0 NEMO_SOURCE OUTPUT_DIR CONFIG_NAME [--mpi]" >&2
+    echo "Usage: $0 NEMO_SOURCE OUTPUT_DIR CONFIG_NAME [--reference NAME] [--academic] [--mpi]" >&2
     exit 1
 fi
 
@@ -31,7 +45,14 @@ nemo_source="${positional[0]}"
 output_directory="${positional[1]}"
 configuration_name="${positional[2]}"
 
-reference_configuration="ORCA2_ICE_PISCES"
+if [ "$academic" -eq 1 ]; then
+    source_subdirectory="tests"
+    makenemo_kind="-a"
+else
+    source_subdirectory="cfgs"
+    makenemo_kind="-r"
+fi
+
 build_directory="$output_directory/build"
 run_directory="$output_directory/run"
 build_log="$output_directory/build.log"
@@ -105,22 +126,37 @@ cat > "$architecture_file" <<ARCHITECTURE_END
 %CFLAGS        -O0 -fPIC
 ARCHITECTURE_END
 
-configuration_path="$nemo_source/cfgs/$configuration_name"
+configuration_path="$nemo_source/$source_subdirectory/$configuration_name"
 user_source_directory="$configuration_path/MY_SRC"
 
 if [ -d "$configuration_path" ]; then
     echo "Reusing existing configuration $configuration_name (delete '$configuration_path' for a fresh build)"
 else
-    echo "Creating configuration $configuration_name from $reference_configuration..."
+    echo "Creating configuration $configuration_name from $reference_configuration ($makenemo_kind)..."
     (cd "$nemo_source" && \
         ./makenemo -m "julia-${architecture_label}" \
-                   -r "$reference_configuration" \
+                   "$makenemo_kind" "$reference_configuration" \
                    -n "$configuration_name" \
                    -j 0) >> "$build_log" 2>&1 || { tail -40 "$build_log" >&2; exit 1; }
 fi
 
 mkdir -p "$user_source_directory"
 cp "$wrapper_source" "$user_source_directory/nemo_wrapper.F90"
+
+# User-supplied MY_SRC files override the base config sources (NEMO compiles MY_SRC with precedence).
+if [ ${#my_src_paths[@]} -gt 0 ]; then
+    for my_src_path in "${my_src_paths[@]}"; do
+        if [ -d "$my_src_path" ]; then
+            echo "Copying MY_SRC directory $my_src_path -> $user_source_directory/"
+            cp -RL "$my_src_path"/. "$user_source_directory/"
+        elif [ -f "$my_src_path" ]; then
+            echo "Copying MY_SRC file $my_src_path -> $user_source_directory/"
+            cp "$my_src_path" "$user_source_directory/"
+        else
+            echo "MY_SRC path not found: $my_src_path" >&2; exit 1
+        fi
+    done
+fi
 
 cpp_file="$configuration_path/cpp_${configuration_name}.fcm"
 [ -f "$cpp_file" ] || { echo "cpp file not found: $cpp_file" >&2; exit 1; }
@@ -146,7 +182,7 @@ cat "$cpp_file"
 echo "Compiling NEMO ($cpu_count parallel jobs); log: $build_log"
 (cd "$nemo_source" && \
     ./makenemo -m "julia-${architecture_label}" \
-               -r "$reference_configuration" \
+               "$makenemo_kind" "$reference_configuration" \
                -n "$configuration_name" \
                -j "$cpu_count") >> "$build_log" 2>&1 || { tail -60 "$build_log" >&2; exit 1; }
 
@@ -175,12 +211,16 @@ gfortran $link_flags \
     $mpi_link_flags
 
 experiment_directory=""
-for candidate in "$nemo_source/cfgs/$reference_configuration/EXPREF" "$configuration_path/EXP00" "$configuration_path/EXPREF"; do
+for candidate in "$nemo_source/$source_subdirectory/$reference_configuration/EXPREF" "$configuration_path/EXP00" "$configuration_path/EXPREF"; do
     [ -d "$candidate" ] && { experiment_directory="$candidate"; break; }
 done
 [ -n "$experiment_directory" ] || { echo "No experiment directory found near $configuration_path" >&2; exit 1; }
 
-echo "Copying experiment files from $experiment_directory to $run_directory"
+echo "Staging a clean run directory from $experiment_directory"
+# Wipe leftovers from previous runs (restarts, output .nc, time.step) so each build yields a fresh run
+# directory; NEMO ctl_stops at init when output files from a prior run are present. Stage inputs *after*
+# building (download_sette_inputs / stage_inputs!), so this wipe never removes user-provided inputs.
+rm -rf "${run_directory:?}"/*
 # -L dereferences symlinks because EXPREF references ../../SHARED/namelist_ref via symlink;
 # on GNU cp those symlinks are preserved and resolve to nonexistent paths in the run directory.
 cp -RL "$experiment_directory"/. "$run_directory/"

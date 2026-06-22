@@ -16,8 +16,8 @@ using CairoMakie
 # We keep everything under one scratch directory so the build, run directory, and intermediate outputs sit
 # side-by-side.
 
-const SCRATCH_OUTPUT  = get(ENV, "NEMO_OUTPUT", joinpath(homedir(), "nemo_orca2_ice"))
-const FINAL_ITERATION = 200
+const output_directory  = get(ENV, "NEMO_OUTPUT", joinpath(homedir(), "nemo_orca2_ice"))
+const final_iteration = 200
 
 # ### Source, build, and forcing data
 #
@@ -31,7 +31,7 @@ source = download_nemo_source()
 # library and run directory, and whether MPI is enabled. It does **not** trigger the build — it just bundles
 # arguments for the next call.
 
-configuration = ORCA2_ICE_configuration(source = source, output_directory = SCRATCH_OUTPUT, mpi = false)
+configuration = ORCA2_ICE_configuration(source = source, output_directory = output_directory, mpi = false)
 
 # [`build_nemo_library`](@ref) invokes the shell pipeline in `lib/build_nemo_library.sh`: it generates a
 # `julia-<platform>.fcm` arch file, copies our Fortran wrapper into `MY_SRC/`, runs `makenemo`, and re-links
@@ -50,7 +50,7 @@ download_orca2_ice_inputs(configuration.run_directory)
 # and `nn_stock` (frequency of restart writes) is pushed past the end so the example doesn't write a restart.
 
 setup_run_directory(configuration; overrides = Dict(
-    ("namelist_cfg", :namrun, :nn_itend) => FINAL_ITERATION,
+    ("namelist_cfg", :namrun, :nn_itend) => final_iteration,
     ("namelist_cfg", :namrun, :nn_stock) => 999999,
 ))
 
@@ -113,18 +113,18 @@ figure_initial
 
 # ### Stepping with snapshots
 #
-# We integrate for `FINAL_ITERATION` time steps and sample the sea-surface height anomaly every
-# `SNAPSHOT_STRIDE` steps so the animation stays manageable while the simulation can be long.
+# We integrate for `final_iteration` time steps and sample the sea-surface height anomaly every
+# `snapshot_stride` steps so the animation stays manageable while the simulation can be long.
 
-const SNAPSHOT_STRIDE = 10
+const snapshot_stride = 10
 
 sea_surface_η_snapshots  = Matrix{Float64}[]
 iteration_history        = Int[]
 mean_temperature_history = Float64[]
 
-for iteration in 1:FINAL_ITERATION
+for iteration in 1:final_iteration
     step!(library)
-    if mod(iteration, SNAPSHOT_STRIDE) == 0
+    if mod(iteration, snapshot_stride) == 0
         get_temperature!(library, temperature)
         get_sea_surface_height!(library, sea_surface_η)
 
