@@ -17,7 +17,7 @@ MODULE nemo_julia_wrapper
 #else
    USE step,           ONLY : stp, Nnn
 #endif
-   USE in_out_manager, ONLY : nit000, nitend, numout, lwp
+   USE in_out_manager, ONLY : nit000, nitend, numout, lwp, numnul, numstp, numrun, numond
 
    IMPLICIT NONE
    PRIVATE
@@ -47,6 +47,15 @@ CONTAINS
 
    SUBROUTINE nemo_internal_finalize() BIND(C, name='nemo_internal_finalize')
       CALL iom_close
+      ! Close NEMO's persistent Fortran units so the model can be re-initialized in the same process. The
+      ! dlopen'd library copies share a single libgfortran unit table, so a leaked unit — in particular
+      ! numnul (/dev/null), which NEMO's own nemo_closefile does not close — makes the next nemo_init STOP.
+      IF( numnul /= -1 )   CLOSE( numnul )
+      IF( numout /=  6 )   CLOSE( numout )
+      IF( numstp /= -1 )   CLOSE( numstp )
+      IF( numrun /= -1 )   CLOSE( numrun )
+      IF( numond /= -1 )   CLOSE( numond )
+      numnul = -1   ;   numout = 6   ;   numstp = -1   ;   numrun = -1   ;   numond = -1
       CALL mppstop
    END SUBROUTINE nemo_internal_finalize
 

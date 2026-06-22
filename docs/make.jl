@@ -17,7 +17,7 @@ mkpath(OUTPUT_DIR)
 
 examples = [
     Example("ORCA2_ICE smoke test", "orca2_ice"),
-    Example("Regional Atlantic Simulation", "amm12_regional_simulation").
+    Example("Regional Atlantic Simulation", "amm12_regional_simulation"),
     Example("Channel Simulation", "channel_step"),
     Example("Julia forced Channel Simulation", "forcing_from_julia")
 ]
@@ -59,12 +59,12 @@ push!(pages, "Library" => [
 ])
 
 makedocs(; sitename = "NEMO.jl",
-         format,
-         pages,
-         modules  = [NEMO],
-         clean    = true,
-         warnonly = [:cross_references, :missing_docs],
-         checkdocs = :exports)
+           format,
+           pages,
+           modules  = [NEMO],
+           clean    = true,
+           warnonly = [:cross_references, :missing_docs],
+           checkdocs = :exports)
 
 #####
 ##### Deploy

@@ -22,3 +22,8 @@ LocalPreferences.toml
 
 # scratch
 *.bak
+
+# nemo build
+drive/*
+run/*
+nemo-logs-new/*

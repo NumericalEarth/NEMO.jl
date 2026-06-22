@@ -31,7 +31,7 @@ bathymetry, forcing) are kept. Returns the run directory.
 function clean_run_directory!(configuration::NemoConfiguration)
     run_directory = configuration.run_directory
     isdir(run_directory) || return run_directory
-    patterns = (r"_restart.*\.nc$", r"_grid_[TUVW].*\.nc$", r"_icemod.*\.nc$", r"_scalar.*\.nc$",
+    patterns = (r"_\d{8,}_restart.*\.nc$", r"_grid_[TUVW].*\.nc$", r"_icemod.*\.nc$", r"_scalar.*\.nc$",
                 r"_diaptr.*\.nc$", r"_SBC.*\.nc$", r"^mesh_mask.*\.nc$", r"^run\.stat",
                 r"^ocean\.output", r"^output\.namelist", r"^fort\.\d+$", r"^solver\.stat$")
     exact = ("time.step", "date.file", "timing.output", "communication_report.txt",
