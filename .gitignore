@@ -9,9 +9,14 @@
 *.jl.mem
 deps/deps.jl
 docs/build/
-docs/src/literated/
 docs/site/
 docs/plans/
+
+# Example pages are pre-rendered into docs/src/literated and committed (see docs/make.jl); keep the
+# rendered markdown, figures, and videos even though *.png/*.mp4 are ignored everywhere else.
+!docs/src/literated/**/*.png
+!docs/src/literated/**/*.mp4
+!docs/src/literated/**/*.svg
 Manifest.toml
 LocalPreferences.toml
 

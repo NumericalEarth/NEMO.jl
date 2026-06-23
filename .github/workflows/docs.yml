@@ -46,7 +46,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JULIA_DEBUG: Documenter
-          NEMO_BUILD_EXAMPLES: 'true'
+          NEMO_BUILD_EXAMPLES: 'false'   # examples are pre-rendered into docs/src/literated and committed
         run: julia --project=docs --color=yes docs/make.jl
 
       - name: Capture run-directory listing on failure
